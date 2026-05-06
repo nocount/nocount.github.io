@@ -250,6 +250,70 @@ h2 {
     text-decoration: underline;
 }
 
+/* Results Table (dwarf-bench) */
+.results-meta {
+    color: #8b949e;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.results-meta code,
+.content code {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.85em;
+    color: #c9d1d9;
+}
+
+.results-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 1.25rem;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    background: #161b22;
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.results-table th,
+.results-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #21262d;
+}
+
+.results-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.results-table th {
+    color: #8b949e;
+    font-weight: 600;
+    background: #1c2128;
+}
+
+.results-table td.num,
+.results-table th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.results-table tbody tr:hover {
+    background: #1c2128;
+}
+
+.results-footnote {
+    color: #8b949e;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
     .site-nav {

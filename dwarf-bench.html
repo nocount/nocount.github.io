@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dwarf-Bench - Wilson</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <nav class="site-nav">
+            <a href="index.html">Home</a>
+            <a href="about.html">About</a>
+            <a href="projects.html">Projects</a>
+            <a href="dwarf-bench.html" class="active">Dwarf-Bench</a>
+            <a href="links.html">Links</a>
+            <a href="contact.html">Contact</a>
+        </nav>
+    </header>
+    <main class="page">
+        <h1>Dwarf-Bench</h1>
+        <section class="content">
+            <p>
+                <strong>Dwarf-Bench</strong> is a small LLM benchmark that tests how well models recall
+                obscure, specific facts about dwarves across fantasy media &mdash; Tolkien, Warhammer,
+                Dungeons &amp; Dragons, Discworld, Dragon Age, World of Warcraft, and friends.
+            </p>
+            <p>
+                Each model is prompted with tools, search, and browsing disabled, and is told to
+                answer from internal knowledge only or to reply <em>"I don't know"</em>. Free-form
+                responses are then graded against a gold-standard answer key by an LLM-as-judge
+                using a 1.0 / 0.5 / 0.0 rubric (fully correct / partially correct / wrong-or-unknown).
+            </p>
+            <p>
+                It's a half-joke benchmark, but it's also a real one &mdash; mostly an excuse to
+                build an eval pipeline from scratch (provider calls, async runner, judge, reporting)
+                without leaning on a heavy framework.
+            </p>
+
+            <h2>Latest results</h2>
+            <p class="results-meta">13 questions &middot; judge: <code>claude-opus-4-7</code> &middot; run on 2026-04-25</p>
+            <div class="results-table-wrap">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th class="num">Accuracy</th>
+                            <th class="num">Correct</th>
+                            <th class="num">Partial</th>
+                            <th class="num">Wrong</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>claude-opus-4-7</code></td>
+                            <td class="num">76.9%</td>
+                            <td class="num">10</td>
+                            <td class="num">0</td>
+                            <td class="num">3</td>
+                        </tr>
+                        <tr>
+                            <td><code>claude-sonnet-4-6</code></td>
+                            <td class="num">76.9%</td>
+                            <td class="num">10</td>
+                            <td class="num">0</td>
+                            <td class="num">3</td>
+                        </tr>
+                        <tr>
+                            <td><code>claude-haiku-4-5</code></td>
+                            <td class="num">38.5%</td>
+                            <td class="num">5</td>
+                            <td class="num">0</td>
+                            <td class="num">8</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="results-footnote">
+                Haiku's 8 incorrect answers were a mix of confident misses and "I don't know" responses.
+                Opus and Sonnet tied; the questions where they failed were the same three obscure ones.
+            </p>
+
+            <h2>Source</h2>
+            <p>
+                Code, dataset, and the full plan live on GitHub:
+                <a href="https://github.com/nocount/dwarf-bench" target="_blank" rel="noopener">github.com/nocount/dwarf-bench</a>.
+            </p>
+        </section>
+    </main>
+</body>
+</html>
