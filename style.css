@@ -332,6 +332,17 @@ h2 {
     font-style: italic;
 }
 
+.results-empty {
+    text-align: center !important;
+    color: #8b949e;
+    font-style: italic;
+    padding: 1.5rem 1rem !important;
+}
+
+.results-empty a {
+    color: #58a6ff;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
     .site-nav {

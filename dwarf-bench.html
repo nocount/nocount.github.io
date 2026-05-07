@@ -41,7 +41,7 @@
             </p>
 
             <h2>Latest results</h2>
-            <p class="results-meta">13 questions &middot; judge: <code>claude-opus-4-7</code> &middot; run on 2026-04-25</p>
+            <p class="results-meta" id="results-meta">Loading&hellip;</p>
             <div class="results-table-wrap">
                 <table class="results-table">
                     <thead>
@@ -51,44 +51,89 @@
                             <th class="num">Correct</th>
                             <th class="num">Partial</th>
                             <th class="num">Wrong</th>
+                            <th class="num">N</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>claude-opus-4-7</code></td>
-                            <td class="num">76.9%</td>
-                            <td class="num">10</td>
-                            <td class="num">0</td>
-                            <td class="num">3</td>
-                        </tr>
-                        <tr>
-                            <td><code>claude-sonnet-4-6</code></td>
-                            <td class="num">76.9%</td>
-                            <td class="num">10</td>
-                            <td class="num">0</td>
-                            <td class="num">3</td>
-                        </tr>
-                        <tr>
-                            <td><code>claude-haiku-4-5</code></td>
-                            <td class="num">38.5%</td>
-                            <td class="num">5</td>
-                            <td class="num">0</td>
-                            <td class="num">8</td>
-                        </tr>
+                    <tbody id="results-tbody">
+                        <tr><td colspan="6" class="results-empty">Loading leaderboard&hellip;</td></tr>
                     </tbody>
                 </table>
             </div>
-            <p class="results-footnote">
-                Haiku's 8 incorrect answers were a mix of confident misses and "I don't know" responses.
-                Opus and Sonnet tied; the questions where they failed were the same three obscure ones.
-            </p>
 
             <h2>Source</h2>
             <p>
-                Code, dataset, and the full plan live on GitHub:
+                Code, dataset, judge prompt, and the leaderboard JSON this page consumes all live on GitHub:
                 <a href="https://github.com/nocount/dwarf-bench" target="_blank" rel="noopener">github.com/nocount/dwarf-bench</a>.
             </p>
         </section>
     </main>
+
+    <script>
+        (function () {
+            const URL = 'https://raw.githubusercontent.com/nocount/dwarf-bench/main/leaderboard.json';
+            const meta = document.getElementById('results-meta');
+            const tbody = document.getElementById('results-tbody');
+
+            const escape = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+            })[c]);
+
+            // Strip 8-digit date suffix from model ids (e.g. claude-haiku-4-5-20251001).
+            const displayModel = (m) => m.replace(/-\d{8}$/, '');
+
+            const formatDate = (iso) => {
+                if (!iso) return null;
+                const d = new Date(iso);
+                if (isNaN(d)) return null;
+                return d.toISOString().slice(0, 10);
+            };
+
+            const renderRow = (entry) => {
+                const acc = entry.accuracy == null ? '—' : (entry.accuracy * 100).toFixed(1) + '%';
+                return (
+                    '<tr>' +
+                    '<td><code>' + escape(displayModel(entry.model)) + '</code></td>' +
+                    '<td class="num">' + escape(acc) + '</td>' +
+                    '<td class="num">' + escape(entry.full) + '</td>' +
+                    '<td class="num">' + escape(entry.partial) + '</td>' +
+                    '<td class="num">' + escape(entry.wrong) + '</td>' +
+                    '<td class="num">' + escape(entry.n) + '</td>' +
+                    '</tr>'
+                );
+            };
+
+            const renderError = (msg) => {
+                meta.textContent = '';
+                tbody.innerHTML = '<tr><td colspan="6" class="results-empty">' + escape(msg) +
+                    ' &mdash; see <a href="' + URL + '" target="_blank" rel="noopener">leaderboard.json</a>.</td></tr>';
+            };
+
+            fetch(URL, { cache: 'no-cache' })
+                .then((r) => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then((data) => {
+                    const rows = Array.isArray(data.leaderboard) ? data.leaderboard : [];
+                    if (rows.length === 0) {
+                        renderError('No graded runs yet');
+                        return;
+                    }
+                    tbody.innerHTML = rows.map(renderRow).join('');
+
+                    const judges = new Set(rows.map((r) => r.judge_model).filter(Boolean));
+                    const updated = formatDate(data.last_updated);
+                    const parts = [];
+                    if (updated) parts.push('Last updated ' + updated);
+                    if (judges.size === 1) {
+                        parts.push('judge: <code>' + escape([...judges][0]) + '</code>');
+                    }
+                    meta.innerHTML = parts.join(' &middot; ');
+                })
+                .catch((e) => {
+                    renderError("Couldn't load leaderboard (" + (e && e.message ? e.message : 'fetch failed') + ')');
+                });
+        })();
+    </script>
 </body>
 </html>
