@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fill-in - Wilson</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <nav class="site-nav">
+            <a href="index.html">Home</a>
+            <a href="about.html">About</a>
+            <a href="projects.html">Projects</a>
+            <a href="dwarf-bench.html">Dwarf-Bench</a>
+            <a href="links.html">Links</a>
+            <a href="contact.html">Contact</a>
+        </nav>
+    </header>
+    <main class="page fillin-page">
+        <h1 id="puzzle-title">Fill-in</h1>
+        <p class="puzzle-meta" id="puzzle-meta">Loading puzzle&hellip;</p>
+
+        <div class="fillin-layout">
+            <div class="fillin-grid-wrap">
+                <div class="fillin-grid" id="grid" role="grid" aria-label="Puzzle grid"></div>
+                <div class="fillin-toolbar">
+                    <button id="btn-dir" type="button">Direction: Across</button>
+                    <button id="btn-reset" type="button">Reset</button>
+                    <span class="fillin-counter" id="counter">0 / 0 placed</span>
+                </div>
+                <p class="fillin-help">
+                    Click a cell to select it; click again to flip direction.
+                    Type letters to fill, Backspace to erase, arrows to move, Space to flip,
+                    Tab to jump to the next word. Bank entries strike through automatically
+                    when their word appears in the grid &mdash; click a chip to override.
+                </p>
+            </div>
+            <aside class="fillin-bank" id="bank" aria-label="Word bank"></aside>
+        </div>
+
+        <input id="hidden-input" type="text" autocomplete="off" autocorrect="off"
+               autocapitalize="characters" inputmode="text" aria-hidden="true" tabindex="-1" />
+    </main>
+
+    <script>
+    (function () {
+        const STORAGE_KEY = 'fillin:breakfast-time:v1';
+        const DATA_URL = 'puzzle-data.json';
+
+        let state = null;
+
+        fetch(DATA_URL, { cache: 'no-cache' })
+            .then((r) => {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(init)
+            .catch((err) => {
+                document.getElementById('puzzle-meta').textContent =
+                    "Couldn't load puzzle-data.json (" + (err && err.message ? err.message : 'fetch failed') + ').';
+            });
+
+        function init(data) {
+            const rows = data.grid.rows;
+            const cols = data.grid.cols;
+            const rawCells = data.grid.cells;
+
+            // Parse cells.
+            const cells = [];
+            for (let r = 0; r < rows; r++) {
+                const row = [];
+                for (let c = 0; c < cols; c++) {
+                    const v = rawCells[r][c];
+                    if (v === '#') row.push({ kind: 'black', number: null });
+                    else if (v === '.') row.push({ kind: 'open', number: null });
+                    else row.push({ kind: 'open', number: parseInt(v, 10) });
+                }
+                cells.push(row);
+            }
+
+            const isOpen = (r, c) =>
+                r >= 0 && r < rows && c >= 0 && c < cols && cells[r][c].kind === 'open';
+
+            // Derive words from structure (a cell starts a word if its neighbor in the
+            // opposite direction is blocked or off-grid, and at least one cell follows).
+            const words = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (cells[r][c].kind !== 'open') continue;
+                    if (!isOpen(r, c - 1) && isOpen(r, c + 1)) {
+                        const wcells = [];
+                        let cc = c;
+                        while (isOpen(r, cc)) { wcells.push([r, cc]); cc++; }
+                        words.push({
+                            id: 'A_' + r + '_' + c,
+                            direction: 'A',
+                            row: r, col: c,
+                            length: wcells.length,
+                            cells: wcells,
+                            number: cells[r][c].number,
+                        });
+                    }
+                    if (!isOpen(r - 1, c) && isOpen(r + 1, c)) {
+                        const wcells = [];
+                        let rr = r;
+                        while (isOpen(rr, c)) { wcells.push([rr, c]); rr++; }
+                        words.push({
+                            id: 'D_' + r + '_' + c,
+                            direction: 'D',
+                            row: r, col: c,
+                            length: wcells.length,
+                            cells: wcells,
+                            number: cells[r][c].number,
+                        });
+                    }
+                }
+            }
+
+            // Empty letters + locked mask.
+            const letters = Array.from({ length: rows }, () => Array(cols).fill(''));
+            const locked = Array.from({ length: rows }, () => Array(cols).fill(false));
+
+            // Apply givens. Coordinates in the JSON are 1-indexed.
+            for (const given of (data.givens || [])) {
+                const r0 = given.startRow - 1;
+                const c0 = given.startCol - 1;
+                const dr = given.direction === 'down' ? 1 : 0;
+                const dc = given.direction === 'down' ? 0 : 1;
+                const ans = given.answer.toUpperCase();
+                for (let i = 0; i < ans.length; i++) {
+                    const rr = r0 + dr * i, cc = c0 + dc * i;
+                    if (rr < 0 || rr >= rows || cc < 0 || cc >= cols) continue;
+                    letters[rr][cc] = ans[i];
+                    locked[rr][cc] = true;
+                }
+            }
+
+            // Build word bank — group by length, sorted alphabetically within each group.
+            const bank = [];
+            const bankKeys = Object.keys(data.wordBank).sort((a, b) => parseInt(a) - parseInt(b));
+            for (const len of bankKeys) {
+                const arr = [...data.wordBank[len]].sort();
+                bank.push({
+                    length: parseInt(len, 10),
+                    words: arr.map((display) => ({
+                        display: display,
+                        letters: display.replace(/[^A-Z]/g, ''),
+                    })),
+                });
+            }
+            const bankLetterIndex = new Set();
+            for (const g of bank) for (const w of g.words) bankLetterIndex.add(w.letters);
+
+            state = {
+                title: data.metadata.title,
+                description: data.metadata.description,
+                rows: rows,
+                cols: cols,
+                cells: cells,
+                words: words,
+                letters: letters,
+                locked: locked,
+                bank: bank,
+                bankLetterIndex: bankLetterIndex,
+                struck: new Set(),
+                activeR: null,
+                activeC: null,
+                activeDir: 'A',
+            };
+
+            loadFromStorage();
+            seedActiveCell();
+
+            renderHeader();
+            renderGrid();
+            renderBank();
+            refreshAutoStrike();
+            renderCounter();
+            setupEvents();
+            focusHiddenInput();
+        }
+
+        function seedActiveCell() {
+            if (state.activeR !== null && state.cells[state.activeR][state.activeC].kind === 'open') return;
+            for (let r = 0; r < state.rows; r++) {
+                for (let c = 0; c < state.cols; c++) {
+                    if (state.cells[r][c].kind === 'open' && !state.locked[r][c]) {
+                        state.activeR = r;
+                        state.activeC = c;
+                        if (!findWordAt(r, c, state.activeDir)) toggleDirection(false);
+                        return;
+                    }
+                }
+            }
+        }
+
+        function loadFromStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const saved = JSON.parse(raw);
+                if (Array.isArray(saved.letters)) {
+                    for (let r = 0; r < state.rows; r++) {
+                        for (let c = 0; c < state.cols; c++) {
+                            if (state.cells[r][c].kind === 'open'
+                                && !state.locked[r][c]
+                                && saved.letters[r]
+                                && typeof saved.letters[r][c] === 'string') {
+                                state.letters[r][c] = saved.letters[r][c];
+                            }
+                        }
+                    }
+                }
+                if (Array.isArray(saved.struck)) {
+                    state.struck = new Set(saved.struck);
+                }
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        let saveTimer = null;
+        function saveSoon() {
+            if (saveTimer) return;
+            saveTimer = setTimeout(() => {
+                saveTimer = null;
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                        letters: state.letters,
+                        struck: [...state.struck],
+                    }));
+                } catch (e) { /* quota or disabled */ }
+            }, 200);
+        }
+
+        function renderHeader() {
+            document.getElementById('puzzle-title').textContent = state.title || 'Fill-in';
+            document.getElementById('puzzle-meta').textContent = state.description || '';
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('grid');
+            grid.style.gridTemplateColumns = 'repeat(' + state.cols + ', var(--cell-size))';
+            grid.style.gridTemplateRows = 'repeat(' + state.rows + ', var(--cell-size))';
+            grid.innerHTML = '';
+
+            for (let r = 0; r < state.rows; r++) {
+                for (let c = 0; c < state.cols; c++) {
+                    const cell = state.cells[r][c];
+                    const el = document.createElement('div');
+                    el.dataset.r = r;
+                    el.dataset.c = c;
+                    if (cell.kind === 'black') {
+                        el.className = 'fcell black';
+                    } else {
+                        el.className = 'fcell';
+                        if (state.locked[r][c]) el.classList.add('locked');
+                        if (cell.number !== null) {
+                            const num = document.createElement('span');
+                            num.className = 'fcell-num';
+                            num.textContent = cell.number;
+                            el.appendChild(num);
+                        }
+                        const letter = document.createElement('span');
+                        letter.className = 'fcell-letter';
+                        letter.textContent = state.letters[r][c];
+                        el.appendChild(letter);
+                    }
+                    grid.appendChild(el);
+                }
+            }
+            updateActiveHighlight();
+        }
+
+        function cellElement(r, c) {
+            const idx = r * state.cols + c;
+            return document.getElementById('grid').children[idx] || null;
+        }
+
+        function renderCellLetter(r, c) {
+            const el = cellElement(r, c);
+            if (!el) return;
+            let span = el.querySelector('.fcell-letter');
+            if (!span) {
+                span = document.createElement('span');
+                span.className = 'fcell-letter';
+                el.appendChild(span);
+            }
+            span.textContent = state.letters[r][c];
+        }
+
+        function updateActiveHighlight() {
+            const grid = document.getElementById('grid');
+            const all = grid.querySelectorAll('.fcell');
+            all.forEach((el) => el.classList.remove('active', 'in-word'));
+            if (state.activeR === null) return;
+
+            const word = findWordAt(state.activeR, state.activeC, state.activeDir);
+            if (word) {
+                for (const [r, c] of word.cells) {
+                    const el = cellElement(r, c);
+                    if (el) el.classList.add('in-word');
+                }
+            }
+            const active = cellElement(state.activeR, state.activeC);
+            if (active) active.classList.add('active');
+
+            const btn = document.getElementById('btn-dir');
+            btn.textContent = 'Direction: ' + (state.activeDir === 'A' ? 'Across' : 'Down');
+        }
+
+        function findWordAt(r, c, dir) {
+            for (const w of state.words) {
+                if (w.direction !== dir) continue;
+                for (const [rr, cc] of w.cells) {
+                    if (rr === r && cc === c) return w;
+                }
+            }
+            return null;
+        }
+
+        function getWordLetters(word) {
+            let s = '';
+            for (const [r, c] of word.cells) s += state.letters[r][c] || '';
+            return s;
+        }
+
+        function isWordComplete(word) {
+            for (const [r, c] of word.cells) if (!state.letters[r][c]) return false;
+            return true;
+        }
+
+        function refreshAutoStrike() {
+            for (const w of state.words) {
+                if (!isWordComplete(w)) continue;
+                const s = getWordLetters(w);
+                if (state.bankLetterIndex.has(s)) {
+                    for (const g of state.bank) {
+                        for (const bw of g.words) {
+                            if (bw.letters === s) state.struck.add(bw.display);
+                        }
+                    }
+                }
+            }
+            renderBankStrikes();
+            renderCounter();
+        }
+
+        function renderBank() {
+            const bank = document.getElementById('bank');
+            bank.innerHTML = '';
+            for (const group of state.bank) {
+                const section = document.createElement('section');
+                section.className = 'bank-group';
+                const h = document.createElement('h3');
+                h.textContent = group.length + ' letters';
+                section.appendChild(h);
+                const list = document.createElement('ul');
+                list.className = 'bank-list';
+                for (const w of group.words) {
+                    const li = document.createElement('li');
+                    li.className = 'bank-word';
+                    li.textContent = w.display;
+                    li.dataset.word = w.display;
+                    if (state.struck.has(w.display)) li.classList.add('struck');
+                    li.addEventListener('click', () => {
+                        if (state.struck.has(w.display)) state.struck.delete(w.display);
+                        else state.struck.add(w.display);
+                        li.classList.toggle('struck');
+                        renderCounter();
+                        saveSoon();
+                        focusHiddenInput();
+                    });
+                    list.appendChild(li);
+                }
+                section.appendChild(list);
+                bank.appendChild(section);
+            }
+        }
+
+        function renderBankStrikes() {
+            const items = document.querySelectorAll('#bank .bank-word');
+            items.forEach((el) => {
+                if (state.struck.has(el.dataset.word)) el.classList.add('struck');
+                else el.classList.remove('struck');
+            });
+        }
+
+        function renderCounter() {
+            let total = 0;
+            for (const g of state.bank) total += g.words.length;
+            document.getElementById('counter').textContent =
+                state.struck.size + ' / ' + total + ' placed';
+        }
+
+        function setupEvents() {
+            const grid = document.getElementById('grid');
+            grid.addEventListener('mousedown', (e) => {
+                const target = e.target.closest('.fcell');
+                if (!target || target.classList.contains('black')) return;
+                e.preventDefault();
+                const r = +target.dataset.r;
+                const c = +target.dataset.c;
+                if (state.activeR === r && state.activeC === c) {
+                    toggleDirection(true);
+                } else {
+                    state.activeR = r;
+                    state.activeC = c;
+                    if (!findWordAt(r, c, state.activeDir)) toggleDirection(false);
+                    updateActiveHighlight();
+                }
+                focusHiddenInput();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (!state || state.activeR === null) return;
+                if (e.ctrlKey || e.metaKey || e.altKey) return;
+                const k = e.key;
+                if (/^[a-zA-Z]$/.test(k)) {
+                    e.preventDefault();
+                    placeLetter(k.toUpperCase());
+                } else if (k === 'Backspace') {
+                    e.preventDefault();
+                    eraseLetter();
+                } else if (k === 'Delete') {
+                    e.preventDefault();
+                    const r = state.activeR, c = state.activeC;
+                    if (!state.locked[r][c]) {
+                        state.letters[r][c] = '';
+                        renderCellLetter(r, c);
+                        refreshAutoStrike();
+                        saveSoon();
+                    }
+                } else if (k === 'ArrowLeft') { e.preventDefault(); moveBy(0, -1, 'A'); }
+                else if (k === 'ArrowRight') { e.preventDefault(); moveBy(0, 1, 'A'); }
+                else if (k === 'ArrowUp')    { e.preventDefault(); moveBy(-1, 0, 'D'); }
+                else if (k === 'ArrowDown')  { e.preventDefault(); moveBy(1, 0, 'D'); }
+                else if (k === ' ')          { e.preventDefault(); toggleDirection(true); }
+                else if (k === 'Tab')        { e.preventDefault(); jumpToNextWord(e.shiftKey ? -1 : 1); }
+                else if (k === 'Home')       { e.preventDefault(); jumpToWordEdge(-1); }
+                else if (k === 'End')        { e.preventDefault(); jumpToWordEdge(1); }
+            });
+
+            // Fallback for mobile / IME that may not fire keydown for letter input.
+            const hidden = document.getElementById('hidden-input');
+            hidden.addEventListener('input', () => {
+                const v = hidden.value;
+                hidden.value = '';
+                for (const ch of v) {
+                    if (/[a-zA-Z]/.test(ch)) placeLetter(ch.toUpperCase());
+                }
+            });
+
+            document.getElementById('btn-dir').addEventListener('click', () => {
+                toggleDirection(true);
+                focusHiddenInput();
+            });
+
+            document.getElementById('btn-reset').addEventListener('click', () => {
+                if (!confirm('Reset every letter you have placed and un-strike every word?')) return;
+                for (let r = 0; r < state.rows; r++) {
+                    for (let c = 0; c < state.cols; c++) {
+                        if (!state.locked[r][c]) state.letters[r][c] = '';
+                    }
+                }
+                state.struck.clear();
+                try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+                renderGrid();
+                renderBank();
+                refreshAutoStrike();
+                renderCounter();
+                focusHiddenInput();
+            });
+        }
+
+        function focusHiddenInput() {
+            const el = document.getElementById('hidden-input');
+            if (el) el.focus({ preventScroll: true });
+        }
+
+        function placeLetter(letter) {
+            const r = state.activeR, c = state.activeC;
+            if (state.cells[r][c].kind !== 'open') return;
+            if (!state.locked[r][c]) {
+                state.letters[r][c] = letter;
+                renderCellLetter(r, c);
+                saveSoon();
+            }
+            advance();
+            refreshAutoStrike();
+        }
+
+        function eraseLetter() {
+            const r = state.activeR, c = state.activeC;
+            if (state.letters[r][c] && !state.locked[r][c]) {
+                state.letters[r][c] = '';
+                renderCellLetter(r, c);
+            } else {
+                retreat();
+                const nr = state.activeR, nc = state.activeC;
+                if (!state.locked[nr][nc]) {
+                    state.letters[nr][nc] = '';
+                    renderCellLetter(nr, nc);
+                }
+            }
+            refreshAutoStrike();
+            saveSoon();
+        }
+
+        function advance() {
+            const w = findWordAt(state.activeR, state.activeC, state.activeDir);
+            if (!w) { updateActiveHighlight(); return; }
+            const idx = w.cells.findIndex(([r, c]) => r === state.activeR && c === state.activeC);
+            if (idx >= 0 && idx < w.cells.length - 1) {
+                state.activeR = w.cells[idx + 1][0];
+                state.activeC = w.cells[idx + 1][1];
+            }
+            updateActiveHighlight();
+        }
+
+        function retreat() {
+            const w = findWordAt(state.activeR, state.activeC, state.activeDir);
+            if (!w) { updateActiveHighlight(); return; }
+            const idx = w.cells.findIndex(([r, c]) => r === state.activeR && c === state.activeC);
+            if (idx > 0) {
+                state.activeR = w.cells[idx - 1][0];
+                state.activeC = w.cells[idx - 1][1];
+            }
+            updateActiveHighlight();
+        }
+
+        function moveBy(dr, dc, preferredDir) {
+            let r = state.activeR + dr;
+            let c = state.activeC + dc;
+            while (r >= 0 && r < state.rows && c >= 0 && c < state.cols) {
+                if (state.cells[r][c].kind === 'open') {
+                    state.activeR = r;
+                    state.activeC = c;
+                    if (preferredDir && findWordAt(r, c, preferredDir)) {
+                        state.activeDir = preferredDir;
+                    } else if (!findWordAt(r, c, state.activeDir)) {
+                        toggleDirection(false);
+                    }
+                    updateActiveHighlight();
+                    return;
+                }
+                r += dr;
+                c += dc;
+            }
+        }
+
+        function toggleDirection(requireWord) {
+            const other = state.activeDir === 'A' ? 'D' : 'A';
+            if (requireWord) {
+                if (findWordAt(state.activeR, state.activeC, other)) state.activeDir = other;
+            } else {
+                state.activeDir = other;
+            }
+            updateActiveHighlight();
+        }
+
+        function jumpToNextWord(delta) {
+            const list = state.words.filter((w) => w.direction === state.activeDir);
+            if (list.length === 0) return;
+            const cur = findWordAt(state.activeR, state.activeC, state.activeDir);
+            let idx = cur ? list.findIndex((w) => w.id === cur.id) : -1;
+            idx = ((idx + delta) % list.length + list.length) % list.length;
+            const nxt = list[idx];
+            state.activeR = nxt.cells[0][0];
+            state.activeC = nxt.cells[0][1];
+            updateActiveHighlight();
+        }
+
+        function jumpToWordEdge(sign) {
+            const w = findWordAt(state.activeR, state.activeC, state.activeDir);
+            if (!w) return;
+            const target = sign < 0 ? w.cells[0] : w.cells[w.cells.length - 1];
+            state.activeR = target[0];
+            state.activeC = target[1];
+            updateActiveHighlight();
+        }
+    })();
+    </script>
+</body>
+</html>

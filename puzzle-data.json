@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "title": "Breakfast Time Crossword",
+    "type": "fill-in",
+    "description": "Cereal box fill-in crossword: place each word from the bank into the grid. Each word in the bank is used exactly once.",
+    "source": "Cereal box, barcode 720824",
+    "totalCellNumbers": 103,
+    "totalWords": 110,
+    "_verification_notes": [
+      "wordBank is verified directly from photo - high confidence.",
+      "givens (APRON at 26-Across) is verified - high confidence.",
+      "grid.cells is best-effort from the photo and SHOULD BE VERIFIED before solving. Black-square placement in particular is worth a quick visual check.",
+      "grid dimensions of 21 rows x 20 cols match the top-row numbering (1-18 with two black squares) and the bottom-row numbering ending at 103."
+    ]
+  },
+
+  "grid": {
+    "rows": 21,
+    "cols": 20,
+    "legend": {
+      "#": "black square",
+      ".": "open white square (no clue number)",
+      "<number>": "open white square that starts a clue (across, down, or both)"
+    },
+    "cells": [
+      ["1",  ".",  ".",  ".",  ".",  ".",  "#",  "7",  ".",  ".",  ".",  ".",  ".",  "#",  "13", ".",  ".",  ".",  ".",  "." ],
+      ["19", ".",  ".",  ".",  ".",  ".",  "#",  "20", ".",  ".",  ".",  ".",  ".",  "#",  "21", ".",  ".",  ".",  ".",  "." ],
+      ["22", ".",  ".",  ".",  ".",  ".",  "#",  "23", ".",  ".",  ".",  ".",  ".",  "#",  "24", ".",  ".",  ".",  ".",  "." ],
+      ["25", ".",  ".",  ".",  ".",  ".",  "#",  ".",  "26", ".",  ".",  ".",  ".",  "#",  "27", ".",  ".",  ".",  ".",  "." ],
+      ["28", ".",  ".",  ".",  ".",  ".",  "#",  "29", ".",  ".",  ".",  ".",  ".",  "#",  "30", ".",  ".",  ".",  ".",  "." ],
+      ["31", ".",  ".",  ".",  ".",  "#",  "32", ".",  ".",  ".",  ".",  ".",  ".",  "33", ".",  ".",  ".",  ".",  ".",  "." ],
+      ["#",  "#",  "#",  "#",  "34", ".",  ".",  ".",  "#",  "35", ".",  "36", ".",  ".",  "37", ".",  "#",  "#",  "#",  "#" ],
+      ["38", ".",  "39", ".",  "40", ".",  ".",  "#",  "41", ".",  "42", ".",  "43", ".",  ".",  "#",  "44", ".",  "45", "46"],
+      ["47", "48", ".",  "49", ".",  ".",  "#",  "50", ".",  "51", ".",  ".",  ".",  ".",  "#",  "52", ".",  "53", ".",  "54"],
+      ["55", ".",  ".",  ".",  ".",  "#",  "56", ".",  "57", ".",  ".",  ".",  ".",  ".",  "#",  "58", ".",  ".",  ".",  "." ],
+      ["59", ".",  ".",  ".",  ".",  "#",  "60", ".",  ".",  ".",  ".",  ".",  ".",  ".",  "#",  "61", ".",  ".",  ".",  "." ],
+      ["62", ".",  ".",  ".",  ".",  "#",  "63", ".",  ".",  ".",  ".",  ".",  ".",  "64", ".",  "65", ".",  ".",  ".",  "." ],
+      ["66", ".",  ".",  ".",  ".",  "#",  "67", ".",  ".",  ".",  ".",  ".",  "#",  "68", ".",  ".",  ".",  ".",  ".",  "." ],
+      ["#",  "#",  "#",  "#",  "#",  "#",  "69", ".",  ".",  ".",  ".",  "#",  "70", ".",  ".",  ".",  "#",  "#",  "#",  "#" ],
+      ["#",  "71", ".",  "72", ".",  "73", ".",  ".",  "#",  "74", ".",  ".",  ".",  ".",  "75", ".",  "76", ".",  "77", "#" ],
+      ["78", "79", ".",  "80", ".",  ".",  ".",  "#",  "81", ".",  "82", ".",  ".",  "#",  "83", ".",  "84", ".",  "85", "86"],
+      ["87", ".",  ".",  ".",  ".",  "#",  "88", ".",  "89", ".",  "90", ".",  ".",  "#",  "91", ".",  ".",  ".",  ".",  "." ],
+      ["92", ".",  ".",  ".",  ".",  "#",  "93", ".",  ".",  ".",  ".",  ".",  ".",  "#",  "94", ".",  ".",  ".",  ".",  "." ],
+      ["95", ".",  ".",  ".",  ".",  "#",  "96", ".",  ".",  ".",  ".",  ".",  ".",  "#",  "97", ".",  ".",  ".",  ".",  "." ],
+      ["98", ".",  ".",  ".",  ".",  "#",  "99", ".",  ".",  ".",  ".",  ".",  ".",  "#",  "100",".",  ".",  ".",  ".",  "." ],
+      ["101",".",  ".",  ".",  ".",  ".",  "#",  "102",".",  ".",  ".",  ".",  ".",  "#",  "103",".",  ".",  ".",  ".",  "." ]
+    ]
+  },
+
+  "givens": [
+    {
+      "clueNumber": 26,
+      "direction": "across",
+      "answer": "APRON",
+      "startRow": 4,
+      "startCol": 9,
+      "note": "Pre-filled letters in the printed puzzle - acts as the seed for the fill-in."
+    }
+  ],
+
+  "wordBank": {
+    "3": ["EEL", "MEN", "OIL", "PIG"],
+    "5": [
+      "AARON", "ACTOR", "ANDES", "ANTES", "APRON", "BORED", "CATCH", "CEDAR",
+      "CENTO", "ECLAT", "FROST", "GAMUT", "LEARN", "NAANS", "NAMER", "NAURU",
+      "NAWAB", "OOMPH", "PEENS", "ROACH", "SIRUP", "STERN", "TONER", "TRUED"
+    ],
+    "6": [
+      "AVENUE", "CHINTZ", "EARNER", "ENCAMP", "ESTEEM", "FESCUE", "FESTAL",
+      "FUSSED", "IMPUTE", "IRIDIC", "LEDGES", "LESSER", "MAORIS", "OCTADS",
+      "PAVANE", "RECEDE", "REGALE", "REIN IN", "RELENT", "REPUTE", "ROCOCO",
+      "SCENES", "SERINS", "SHIRKS", "STINTS", "TONE UP", "TRAVEL", "UNISEX",
+      "UPKEEP", "VESPER", "WADING", "YESSES"
+    ],
+    "7": [
+      "ALERTED", "BASHFUL", "CADENCE", "CONCEPT", "CORNETS", "DEMOTIC",
+      "DUSTPAN", "EARNEST", "EASTMAN", "ELEGIST", "EPHESUS", "ETHICAL",
+      "FACADES", "FISHING", "GENESES", "HOMIEST", "INSIDER", "MARTENS",
+      "OMNIBUS", "ON PAPER", "PHRASAL", "PINHOLE", "PRAIRIE", "PUNSTER",
+      "QUANTIC", "SEA KALE", "SELVAGE", "SENNETS", "SHARERS", "SHERPAS",
+      "SKATING", "SOMALIS", "STOMACH", "STRIATE", "SUGARED", "TENTAGE",
+      "THRUWAY", "T-SHIRTS", "UP TO PAR", "VALENCE", "VETERAN", "WORSTED"
+    ],
+    "8": ["MARANJAB", "RINGSIDE", "SAPPHIRE", "TREASURE"],
+    "9": ["BASEMENTS", "CINEASTES", "THEME SONG", "UTTERMOST"]
+  },
+
+  "wordBankNotes": {
+    "multiWordEntries": [
+      "REIN IN", "TONE UP", "ON PAPER", "SEA KALE", "UP TO PAR",
+      "T-SHIRTS", "THEME SONG"
+    ],
+    "explanation": "Multi-word/hyphenated entries fill the grid as contiguous letters with no separator (e.g. 'REIN IN' -> R,E,I,N,I,N). The 'length' key reflects letter count, not including spaces or hyphens.",
+    "counts": { "3": 4, "5": 24, "6": 32, "7": 42, "8": 4, "9": 4, "total": 110 }
+  }
+}
